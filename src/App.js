@@ -373,6 +373,7 @@ function App() {
         <div className="logo">
           <span className="logo-karta">Karta</span>
           <span className="logo-vision">Vision</span>
+          <span className="logo-beta">Beta</span>
         </div>
       </div>
       <div className="search-overlay">

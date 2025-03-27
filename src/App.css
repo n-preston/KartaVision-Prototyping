@@ -36,6 +36,7 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  align-items: center;
 }
 
 .logo-karta {
@@ -46,6 +47,15 @@ body {
 .logo-vision {
   font-weight: 300;
   color: #6B46C1;
+}
+
+.logo-beta {
+  font-weight: 300;
+  color: #000;
+  font-size: 14px;
+  margin-left: 0;
+  opacity: 0.7;
+  letter-spacing: 0.5px;
 }
 
 .search-overlay {
