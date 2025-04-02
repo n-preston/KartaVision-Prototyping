@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import Cookies from 'js-cookie';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import './App.css';
+import RegistrationOverlay from './components/RegistrationOverlay';
+import GoogleSignIn from './components/GoogleSignIn';
 
 // Set your Mapbox access token
 mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpamV3YXIiLCJhIjoiY203aW5ka3k3MHkzdzJqcHl0NzlhZXFrciJ9.zN-YAdr2tk8c3h5BBp9hEg';
@@ -8,6 +14,16 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpamV3YXIiLCJhIjoiY203aW5ka3k3MHkzdzJqcHl0N
 function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
+  const [googleUser, setGoogleUser] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [cameraState, setCameraState] = useState({
+    center: [103.8198, 1.3521], // Singapore coordinates
+    zoom: 11,
+    bearing: 0,
+    pitch: 0
+  });
   const [lng] = useState(103.8198); // Singapore coordinates
   const [lat] = useState(1.3521);
   const [zoom] = useState(11);
@@ -56,7 +72,6 @@ function App() {
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholder, setPlaceholder] = useState('What are you looking for?');
-  const [isInputFocused, setIsInputFocused] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isResultsVisible, setIsResultsVisible] = useState(true);
 
@@ -366,16 +381,88 @@ function App() {
     }
   }, [lng, lat, zoom]);
 
+  useEffect(() => {
+    // Check authentication state
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        setGoogleUser({
+          name: user.displayName,
+          email: user.email
+        });
+        setShowGoogleSignIn(false);
+        
+        // Check if user has completed registration
+        const isRegistered = Cookies.get('kartavision_registered');
+        if (!isRegistered) {
+          setShowRegistration(true);
+        }
+      } else {
+        // User is signed out
+        setGoogleUser(null);
+        setShowGoogleSignIn(true);
+      }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleSuccess = (userData) => {
+    setGoogleUser(userData);
+    setShowGoogleSignIn(false);
+    setShowRegistration(true);
+  };
+
+  const handleRegistrationClose = () => {
+    setShowRegistration(false);
+  };
+
+  const handleCameraMove = (direction) => {
+    if (!map.current) return;
+    
+    const moveAmount = 0.01; // Adjust this value to control movement speed
+    const currentCenter = map.current.getCenter();
+    
+    if (direction === 'left') {
+      map.current.flyTo({
+        center: [currentCenter.lng - moveAmount, currentCenter.lat],
+        duration: 1000
+      });
+    } else if (direction === 'right') {
+      map.current.flyTo({
+        center: [currentCenter.lng + moveAmount, currentCenter.lat],
+        duration: 1000
+      });
+    }
+  };
+
   return (
     <div className="App">
-      <div className="map-container" ref={mapContainer}></div>
-      <div className="logo-container">
+      <div className="header">
         <div className="logo">
           <span className="logo-karta">Karta</span>
           <span className="logo-vision">Vision</span>
           <span className="logo-beta">Beta</span>
         </div>
+        <div className="controls">
+          <button 
+            className="control-button"
+            onClick={() => handleCameraMove('left')}
+            disabled={isInputFocused}
+          >
+            ←
+          </button>
+          <button 
+            className="control-button"
+            onClick={() => handleCameraMove('right')}
+            disabled={isInputFocused}
+          >
+            →
+          </button>
+        </div>
       </div>
+      <div ref={mapContainer} className="map-container" />
       <div className="search-overlay">
         <form onSubmit={handleSearch} className="search-form">
           <input
@@ -455,6 +542,15 @@ function App() {
             </div>
           )}
         </div>
+      )}
+      {showGoogleSignIn && (
+        <GoogleSignIn onSuccess={handleGoogleSuccess} />
+      )}
+      {showRegistration && (
+        <RegistrationOverlay 
+          onClose={handleRegistrationClose}
+          googleUser={googleUser}
+        />
       )}
     </div>
   );
