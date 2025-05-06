@@ -446,6 +446,21 @@ function App() {
     setShowUserMenu(!showUserMenu);
   };
 
+  const handleSearchPro = () => {
+    console.log("Search Pro clicked");
+    setShowUserMenu(false);
+    setShowSearchPro(true);
+    // Hide the main map controls when in Search Pro mode
+    document.body.classList.add('search-pro-active');
+  };
+
+  const handleRequestNewImagery = () => {
+    console.log("Request New Imagery clicked");
+    setShowUserMenu(false);
+    // Add implementation for requesting new imagery here
+    alert("Feature coming soon: Request new satellite imagery for specific areas");
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -453,14 +468,6 @@ function App() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
-
-  const handleSearchPro = () => {
-    console.log("Search Pro clicked");
-    setShowUserMenu(false);
-    setShowSearchPro(true);
-    // Hide the main map controls when in Search Pro mode
-    document.body.classList.add('search-pro-active');
   };
 
   const handleSearchProClose = () => {
@@ -546,6 +553,9 @@ function App() {
               <div className="user-menu" ref={userMenuRef}>
                 <div className="user-menu-item" onClick={handleSearchPro}>
                   Search Pro
+                </div>
+                <div className="user-menu-item" onClick={handleRequestNewImagery}>
+                  Request New Imagery
                 </div>
                 <div className="user-menu-item" onClick={handleLogout}>
                   Logout
