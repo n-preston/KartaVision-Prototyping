@@ -3,10 +3,11 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Cookies from 'js-cookie';
 import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import './App.css';
 import RegistrationOverlay from './components/RegistrationOverlay';
 import GoogleSignIn from './components/GoogleSignIn';
+import SearchPro from './components/SearchPro';
 
 // Set your Mapbox access token
 mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpamV3YXIiLCJhIjoiY203aW5ka3k3MHkzdzJqcHl0NzlhZXFrciJ9.zN-YAdr2tk8c3h5BBp9hEg';
@@ -14,10 +15,14 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpamV3YXIiLCJhIjoiY203aW5ka3k3MHkzdzJqcHl0N
 function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const userMenuRef = useRef(null);
+  const userButtonRef = useRef(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
+  const [showSearchPro, setShowSearchPro] = useState(false);
   const [googleUser, setGoogleUser] = useState(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [cameraState, setCameraState] = useState({
     center: [103.8198, 1.3521], // Singapore coordinates
     zoom: 11,
@@ -437,117 +442,183 @@ function App() {
     }
   };
 
+  const handleUserMenuToggle = () => {
+    setShowUserMenu(!showUserMenu);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setShowUserMenu(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleSearchPro = () => {
+    console.log("Search Pro clicked");
+    setShowUserMenu(false);
+    setShowSearchPro(true);
+    // Hide the main map controls when in Search Pro mode
+    document.body.classList.add('search-pro-active');
+  };
+
+  const handleSearchProClose = () => {
+    setShowSearchPro(false);
+    // Show the main map controls again
+    document.body.classList.remove('search-pro-active');
+  };
+
+  useEffect(() => {
+    // Close menu when clicking outside
+    const handleClickOutside = (event) => {
+      if (
+        userMenuRef.current && 
+        !userMenuRef.current.contains(event.target) &&
+        userButtonRef.current &&
+        !userButtonRef.current.contains(event.target)
+      ) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="App">
-      <div className="logo-container">
-        <div className="logo">
-          <span className="logo-karta">Karta</span>
-          <span className="logo-vision">Vision</span>
-          <span className="logo-beta">Beta</span>
-        </div>
-      </div>
-      <div className="controls-container">
-        <div className="controls">
-          <button 
-            className="control-button"
-            onClick={() => handleCameraMove('left')}
-            disabled={isInputFocused}
-          >
-            ←
-          </button>
-          <button 
-            className="control-button"
-            onClick={() => handleCameraMove('right')}
-            disabled={isInputFocused}
-          >
-            →
-          </button>
-        </div>
-      </div>
-      <div ref={mapContainer} className="map-container" />
-      <div className="search-overlay">
-        <form onSubmit={handleSearch} className="search-form">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={placeholder}
-            className={`search-input ${isInputFocused ? 'focused' : ''}`}
-            onFocus={() => setIsInputFocused(true)}
-            onBlur={() => setIsInputFocused(false)}
-          />
-          <button type="submit" className="search-button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="search-icon">
-              <path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-0.46 5.28-1.3l5.01 5.01c0.39 0.39 1.02 0.39 1.41 0C22.1 21.32 22.1 20.68 21.71 20.29zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6S13.31 16 10 16z"/>
-            </svg>
-          </button>
-        </form>
-      </div>
-      <div className="user-container">
-        <button className="user-button">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="user-icon">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-          </svg>
-        </button>
-      </div>
-      {searchResults.length > 0 && (
-        <div className={`results-container ${!isResultsVisible ? 'hidden' : ''}`}>
-          <div className="results-header">
-            <h2>Search Results ({searchResults.length})</h2>
-            <button 
-              className="toggle-results-button"
-              onClick={() => {
-                const newVisibility = !isResultsVisible;
-                setIsResultsVisible(newVisibility);
-                
-                // Keep heat map visible always, only toggle markers
-                if (map.current && map.current.getSource('potholes') && searchQuery.toLowerCase().includes('pothole')) {
-                  // Hide markers when collapsed
-                  if (!newVisibility) {
-                    document.querySelectorAll('.marker-popup').forEach(popup => {
-                      popup.style.visibility = 'hidden';
-                      popup.style.display = 'none';
-                    });
-                  } else {
-                    // Show markers based on current zoom level when expanded
-                    const currentZoom = map.current.getZoom();
-                    document.querySelectorAll('.marker-popup').forEach(popup => {
-                      popup.style.visibility = 'visible';
-                      popup.style.display = currentZoom >= 14 ? 'block' : 'none';
-                    });
-                  }
-                }
-              }}
-            >
-              {isResultsVisible ? 'Hide' : 'Show'}
-            </button>
+      {!showSearchPro && (
+        <>
+          <div className="logo-container">
+            <div className="logo">
+              <span className="logo-karta">Karta</span>
+              <span className="logo-vision">Vision</span>
+              <span className="logo-beta">Beta</span>
+            </div>
           </div>
-          {isResultsVisible && (
-            <div className="results-cards">
-              {searchResults.map(result => (
-                <div key={result.id} className="result-card">
-                  <div className="result-image">
-                    <img src={result.imageUrl} alt={result.title} />
-                  </div>
-                  <div className="result-card-content">
-                    <h3>{result.title}</h3>
-                    <p className="description">{result.description}</p>
-                    <div className="result-details">
-                      <div className="detail-row">
-                        <strong>Date:</strong>
-                        <span className="detail-value">{result.reportDate}</span>
+          <div className="controls-container">
+            <div className="controls">
+              <button 
+                className="control-button"
+                onClick={() => handleCameraMove('left')}
+                disabled={isInputFocused}
+              >
+                ←
+              </button>
+              <button 
+                className="control-button"
+                onClick={() => handleCameraMove('right')}
+                disabled={isInputFocused}
+              >
+                →
+              </button>
+            </div>
+          </div>
+          <div ref={mapContainer} className="map-container" />
+          <div className="search-overlay">
+            <form onSubmit={handleSearch} className="search-form">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={placeholder}
+                className={`search-input ${isInputFocused ? 'focused' : ''}`}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+              />
+              <button type="submit" className="search-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="search-icon">
+                  <path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-0.46 5.28-1.3l5.01 5.01c0.39 0.39 1.02 0.39 1.41 0C22.1 21.32 22.1 20.68 21.71 20.29zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6S13.31 16 10 16z"/>
+                </svg>
+              </button>
+            </form>
+          </div>
+          <div className="user-container">
+            <button className="user-button" onClick={handleUserMenuToggle} ref={userButtonRef}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="user-icon">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+              </svg>
+            </button>
+            {showUserMenu && (
+              <div className="user-menu" ref={userMenuRef}>
+                <div className="user-menu-item" onClick={handleSearchPro}>
+                  Search Pro
+                </div>
+                <div className="user-menu-item" onClick={handleLogout}>
+                  Logout
+                </div>
+              </div>
+            )}
+          </div>
+          {searchResults.length > 0 && (
+            <div className={`results-container ${!isResultsVisible ? 'hidden' : ''}`}>
+              <div className="results-header">
+                <h2>Search Results ({searchResults.length})</h2>
+                <button 
+                  className="toggle-results-button"
+                  onClick={() => {
+                    const newVisibility = !isResultsVisible;
+                    setIsResultsVisible(newVisibility);
+                    
+                    // Keep heat map visible always, only toggle markers
+                    if (map.current && map.current.getSource('potholes') && searchQuery.toLowerCase().includes('pothole')) {
+                      // Hide markers when collapsed
+                      if (!newVisibility) {
+                        document.querySelectorAll('.marker-popup').forEach(popup => {
+                          popup.style.visibility = 'hidden';
+                          popup.style.display = 'none';
+                        });
+                      } else {
+                        // Show markers based on current zoom level when expanded
+                        const currentZoom = map.current.getZoom();
+                        document.querySelectorAll('.marker-popup').forEach(popup => {
+                          popup.style.visibility = 'visible';
+                          popup.style.display = currentZoom >= 14 ? 'block' : 'none';
+                        });
+                      }
+                    }
+                  }}
+                >
+                  {isResultsVisible ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {isResultsVisible && (
+                <div className="results-cards">
+                  {searchResults.map(result => (
+                    <div key={result.id} className="result-card">
+                      <div className="result-image">
+                        <img src={result.imageUrl} alt={result.title} />
+                      </div>
+                      <div className="result-card-content">
+                        <h3>{result.title}</h3>
+                        <p className="description">{result.description}</p>
+                        <div className="result-details">
+                          <div className="detail-row">
+                            <strong>Date:</strong>
+                            <span className="detail-value">{result.reportDate}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
+      
+      {showSearchPro && (
+        <SearchPro onClose={handleSearchProClose} />
+      )}
+      
       {showGoogleSignIn && (
         <GoogleSignIn onSuccess={handleGoogleSuccess} />
       )}
+      
       {showRegistration && (
         <RegistrationOverlay 
           onClose={handleRegistrationClose}
