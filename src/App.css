@@ -23,7 +23,7 @@ body {
   position: absolute;
   top: 20px;
   left: 20px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .logo {
@@ -31,12 +31,13 @@ body {
   font-size: 24px;
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logo-karta {
@@ -493,4 +494,45 @@ body {
 
 .results-cards::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
+}
+
+.controls-container {
+  position: absolute;
+  top: 20px;
+  left: 200px;
+  z-index: 1;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-button {
+  background: transparent;
+  border: none;
+  color: #333;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.control-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
