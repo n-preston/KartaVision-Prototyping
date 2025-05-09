@@ -18,6 +18,9 @@ const SearchPro = ({ onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [activeDropdown, setActiveDropdown] = useState(null); // Track which dropdown is open
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
 
   // Generate mock data for search results
   const generateMockResults = (searchType) => {
@@ -246,6 +249,62 @@ const SearchPro = ({ onClose }) => {
     setViewMode(viewMode === 'list' ? 'map' : 'list');
   };
 
+  // New function to handle export
+  const handleExport = (format, conversation) => {
+    console.log(`Exporting "${conversation}" in ${format} format`);
+    // Close the dropdown after export action
+    setActiveDropdown(null);
+    // Here you would implement the actual export functionality
+  };
+
+  // Function to handle drag start
+  const handleDragStart = (e, index) => {
+    setDraggedItem(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Add a class to the dragged item for styling
+    e.currentTarget.classList.add('dragging');
+  };
+
+  // Function to handle drag over
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverItem(index);
+  };
+
+  // Function to handle drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    
+    // If we're not dragging or don't have a valid drag target, return
+    if (draggedItem === null || dragOverItem === null || draggedItem === dragOverItem) {
+      return;
+    }
+    
+    // Create a copy of the conversations array
+    const newConversations = [...conversations];
+    
+    // Remove the dragged item from the array
+    const draggedItemValue = newConversations[draggedItem];
+    newConversations.splice(draggedItem, 1);
+    
+    // Insert the dragged item at the new position
+    newConversations.splice(dragOverItem, 0, draggedItemValue);
+    
+    // Update state with the new order
+    setConversations(newConversations);
+    
+    // Reset drag state
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
+  // Function to handle drag end
+  const handleDragEnd = (e) => {
+    e.currentTarget.classList.remove('dragging');
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
   return (
     <div className="search-pro-overlay">
       <div className="search-pro-container">
@@ -257,13 +316,84 @@ const SearchPro = ({ onClose }) => {
             </button>
           </div>
           <div className="search-pro-history">
+            <div className="projects-header">
+              <h3 className="projects-heading">Projects</h3>
+              <button 
+                className="add-project-button" 
+                onClick={() => {
+                  setShowResults(false);
+                  setQuery(''); // Clear query so placeholder will show
+                }}
+                title="Create new project"
+              >
+                +
+              </button>
+            </div>
             {conversations.map((conversation, index) => (
               <div 
                 key={index} 
-                className="history-item"
-                onClick={() => handleConversationClick(conversation)}
+                className={`history-item ${dragOverItem === index ? 'drag-over' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                onDrop={handleDrop}
               >
-                {conversation}
+                <div 
+                  className="history-item-text"
+                  onClick={() => handleConversationClick(conversation)}
+                >
+                  {conversation}
+                </div>
+                <div className="history-item-actions">
+                  <button 
+                    className="menu-dots-button"
+                    onMouseDown={(e) => {
+                      // When mousedown on dots, prepare for dragging
+                      // The parent div has the draggable attribute
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      // Only open dropdown on click if not dragging
+                      e.stopPropagation();
+                      setActiveDropdown(activeDropdown === index ? null : index);
+                    }}
+                  >
+                    ⋮
+                  </button>
+                  {activeDropdown === index && (
+                    <div className="export-dropdown">
+                      <div className="export-menu-header">Export as:</div>
+                      <button 
+                        className="export-option"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExport('CSV', conversation);
+                        }}
+                      >
+                        CSV
+                      </button>
+                      <button 
+                        className="export-option"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExport('SHP', conversation);
+                        }}
+                      >
+                        .SHP
+                      </button>
+                      <button 
+                        className="export-option"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExport('API', conversation);
+                        }}
+                      >
+                        API
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -275,7 +405,7 @@ const SearchPro = ({ onClose }) => {
           
           {!showResults ? (
             <div className="search-pro-overlay-content">
-              <h1>What can I help with?</h1>
+              <h1>Create new project</h1>
               
               <form onSubmit={handleSubmit} className="search-pro-input-container">
                 <div className="search-pro-input-wrapper">
@@ -284,16 +414,22 @@ const SearchPro = ({ onClose }) => {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask anything about locations, traffic, or routes..."
+                    placeholder="Start defining your project..."
                     className="search-pro-input"
                   />
-                  <button type="button" className="attachment-button">+</button>
+                  <button type="submit" className="search-circle-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                  </button>
                 </div>
-                <button type="submit" className="submit-button">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                  </svg>
-                </button>
+                
+                <div className="filter-pills-container">
+                  <button className="filter-pill">Area of interest</button>
+                  <button className="filter-pill">Time period</button>
+                  <button className="filter-pill">Feature</button>
+                  <button className="filter-pill">...</button>
+                </div>
               </form>
             </div>
           ) : (
