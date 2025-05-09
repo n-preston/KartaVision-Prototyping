@@ -380,16 +380,16 @@ const SearchPro = ({ onClose }) => {
                           handleExport('SHP', conversation);
                         }}
                       >
-                        .SHP
+                        SHP
                       </button>
                       <button 
                         className="export-option"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleExport('API', conversation);
+                          handleExport('KML', conversation);
                         }}
                       >
-                        API
+                        KML
                       </button>
                     </div>
                   )}
