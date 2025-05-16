@@ -327,6 +327,17 @@
   background-color: rgba(107, 70, 193, 0.1);
 }
 
+.export-option.delete {
+  color: #dc3545;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+}
+
+.export-option.delete:hover {
+  background-color: #fff5f5;
+}
+
 .history-item:hover {
   background-color: rgba(107, 70, 193, 0.1);
 }

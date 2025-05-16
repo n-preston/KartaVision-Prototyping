@@ -305,6 +305,12 @@ const SearchPro = ({ onClose }) => {
     setDragOverItem(null);
   };
 
+  // Add this new function after the other handler functions
+  const handleDeleteConversation = (conversationToDelete) => {
+    setConversations(prev => prev.filter(conv => conv !== conversationToDelete));
+    setActiveDropdown(null); // Close the dropdown after deletion
+  };
+
   return (
     <div className="search-pro-overlay">
       <div className="search-pro-container">
@@ -363,6 +369,15 @@ const SearchPro = ({ onClose }) => {
                   </button>
                   {activeDropdown === index && (
                     <div className="export-dropdown">
+                      <button 
+                        className="export-option delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteConversation(conversation);
+                        }}
+                      >
+                        Delete
+                      </button>
                       <div className="export-menu-header">Export as:</div>
                       <button 
                         className="export-option"

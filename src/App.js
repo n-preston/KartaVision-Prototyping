@@ -20,6 +20,7 @@ function App() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
   const [showSearchPro, setShowSearchPro] = useState(false);
+  const [showProPopup, setShowProPopup] = useState(false);
   const [googleUser, setGoogleUser] = useState(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -447,11 +448,16 @@ function App() {
   };
 
   const handleSearchPro = () => {
-    console.log("Search Pro clicked");
-    setShowUserMenu(false);
-    setShowSearchPro(true);
-    // Hide the main map controls when in Search Pro mode
-    document.body.classList.add('search-pro-active');
+    setShowProPopup(true);
+  };
+
+  const handleProPopupClose = () => {
+    setShowProPopup(false);
+  };
+
+  const handleProRegister = () => {
+    setShowProPopup(false);
+    setShowRegistration(true);
   };
 
   const handleRequestNewImagery = () => {
@@ -468,12 +474,6 @@ function App() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
-
-  const handleSearchProClose = () => {
-    setShowSearchPro(false);
-    // Show the main map controls again
-    document.body.classList.remove('search-pro-active');
   };
 
   useEffect(() => {
@@ -526,23 +526,24 @@ function App() {
           </div>
           <div ref={mapContainer} className="map-container" />
           <div className="search-overlay">
-            <form onSubmit={handleSearch} className="search-form">
+            <form className="search-form" onSubmit={handleSearch}>
               <input
                 type="text"
+                className={`search-input ${isInputFocused ? 'focused' : ''}`}
+                placeholder={placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={placeholder}
-                className={`search-input ${isInputFocused ? 'focused' : ''}`}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
               />
               <button type="submit" className="search-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="search-icon">
-                  <path d="M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-0.46 5.28-1.3l5.01 5.01c0.39 0.39 1.02 0.39 1.41 0C22.1 21.32 22.1 20.68 21.71 20.29zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6S13.31 16 10 16z"/>
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </form>
           </div>
+          <button className="pro-button" onClick={handleSearchPro}>Pro</button>
           <div className="user-container">
             <button className="user-button" onClick={handleUserMenuToggle} ref={userButtonRef}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="user-icon">
@@ -552,7 +553,7 @@ function App() {
             {showUserMenu && (
               <div className="user-menu" ref={userMenuRef}>
                 <div className="user-menu-item" onClick={handleSearchPro}>
-                  Search Pro
+                  <strong>KartaVision Pro</strong>
                 </div>
                 <div className="user-menu-item" onClick={handleRequestNewImagery}>
                   Request New Imagery
@@ -621,8 +622,64 @@ function App() {
         </>
       )}
       
-      {showSearchPro && (
-        <SearchPro onClose={handleSearchProClose} />
+      {showProPopup && (
+        <>
+          <div className="pro-popup-overlay" onClick={handleProPopupClose} />
+          <div className="pro-popup">
+            <button className="pro-popup-close" onClick={handleProPopupClose}>×</button>
+            <div className="pro-popup-header">
+              <h2>KartaVision Pro</h2>
+              <p>Coming soon with powerful features for advanced road monitoring</p>
+            </div>
+            <div className="pro-features">
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export Detections
+              </div>
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                Create Custom Projects
+              </div>
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v8" />
+                  <path d="M8 12h8" />
+                </svg>
+                Specific Areas of Interest
+              </div>
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Refined Results
+              </div>
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Set Up Alerts
+              </div>
+              <div className="pro-feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Request Fresh Imagery
+              </div>
+            </div>
+            <button className="pro-register-button" onClick={handleProRegister}>
+              Register your interest in KartaVision Pro today!
+            </button>
+          </div>
+        </>
       )}
       
       {showGoogleSignIn && (
